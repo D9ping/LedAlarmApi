@@ -1,0 +1,19 @@
+[Unit]
+Description=Blinkt led alarm http api (listing on port 18339)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStartPre=/bin/sleep 1
+ExecStart=/usr/bin/python3 /opt/ledalarmapi/ledalarmapi.py
+User=pi
+Group=pi
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectKernelModules=true
+MemoryDenyWriteExecute=true
+# strict makes the entire file system read only:
+ProtectSystem=strict
+
+[Install]
+WantedBy=multi-user.target
