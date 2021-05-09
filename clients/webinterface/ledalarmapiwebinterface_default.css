@@ -1,0 +1,68 @@
+body {
+    background-color: #000;
+    -webkit-transition: 0.75s all ease-in-out;
+    -moz-transition: 0.75s all ease-in-out;
+    -o-transition: 0.75s all ease-in-out;
+    transition: 0.75s all ease-in-out;
+    color: #888888;
+}
+center span {
+    position: relative;
+    bottom: 16px;
+    margin-right: 1em;
+}
+.ledswitch:hover {
+    transition: 0.5s all ease;
+    cursor:pointer;
+}
+.errormsg {
+    color: red;
+    font-weight: bold;
+    background-color: white;
+    padding: 0.5em;
+}
+#btnSwitchL0:hover {
+    filter:brightness(110%);
+}
+#btnSwitchL1 {
+    filter: hue-rotate(220deg);
+}
+#btnSwitchL1:hover {
+    filter:hue-rotate(220deg) brightness(110%) !important;
+}
+#btnSwitchL2 {
+    filter: grayscale(1);
+}
+#btnSwitchL2:hover {
+    filter: grayscale(1) brightness(110%) !important;
+}
+#btnSwitchL3 {
+    filter: hue-rotate(130deg);
+}
+#btnSwitchL3:hover {
+    filter: hue-rotate(130deg) brightness(110%) !important;
+}
+#btnSwitchL4 {
+    filter: hue-rotate(270deg);
+}
+#btnSwitchL4:hover {
+    filter: hue-rotate(270deg) brightness(110%) !important;
+}
+#btnSwitchL5 {
+    filter: hue-rotate(70deg);
+}
+#btnSwitchL5:hover {
+    filter: hue-rotate(70deg) brightness(120%) !important;
+}
+#btnSwitchL6 {
+    filter: hue-rotate(200deg);
+}
+#btnSwitchL6:hover {
+    filter: hue-rotate(200deg) brightness(110%) !important;
+}
+#btnSwitchL7 {
+    filter: hue-rotate(50deg);
+}
+#btnSwitchL7:hover {
+    filter: hue-rotate(50deg) brightness(120%) !important;
+}
