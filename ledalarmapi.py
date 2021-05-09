@@ -8,6 +8,7 @@ from flask import Flask
 from flask import request
 from blinkt import set_pixel, set_brightness, show, clear
 from configparser import ConfigParser
+import argparse
 import time
 import threading
 import hashlib
@@ -18,7 +19,7 @@ import os
 
 class localFlask(Flask):
     def process_response(self, response):
-       response.headers['Server'] = 'PiLedAlarmApi/1.0'
+       response.headers['Server'] = 'LedAlarmApi/1.0'
        response.headers['Content-Type'] = 'text/plain'
        return(response)
 
@@ -191,7 +192,7 @@ def show_led():
             # green
             set_pixel(3, 0, 255, 0, 0.3)
         if leds['led4']:
-            # paars
+            # purple
             set_pixel(4, 128, 0, 128, 0.3)
         if leds['led5']:
             # yellow
@@ -206,22 +207,49 @@ def show_led():
         time.sleep(2)
 
 if __name__ == '__main__':
-    if os.path.exists('/etc/ledalarmapi.ini'):
+    api_port = '18339'
+    api_listenaddress = '0.0.0.0'
+    parser = argparse.ArgumentParser(description='Leds REST api for the Blinkt hat.')
+    parser.add_argument('configfile', nargs='?', type=str, 
+                        default='/etc/ledalarmapi.conf',
+                        help="""Path to the ledalarmapi configuration file. If 
+ not provided /etc/ledalarmapi.conf is used.""")
+    parser.add_argument('-P', '--port', metavar=api_port, type=int, default=None,
+                        help="""The port number to use.""")
+    parser.add_argument('-L', '--listenaddress', metavar=api_listenaddress,
+                        type=str, default=None,
+                        help="""Address to listen the HTTP REST server on. 
+ By default uses 0.0.0.0 for all IPv4 network interfaces.""")
+    args = parser.parse_args()
+    if os.path.exists(args.configfile):
         config = ConfigParser()
-        config.read('/etc/ledalarmapi.ini')
+        config.read(args.configfile)
         for sect in config.sections():
             if sect == 'apikeys':
                 for ipaddr, apikeystr in config.items(sect):
                     apikeys[ipaddr] = {}
                     apikeys[ipaddr]['apikey'] = apikeystr
                     apikeys[ipaddr]['lastused'] = 0
-    else:
-        print('ERROR: /etc/ledalarmapi.ini configuration file not found.')
+            elif sect == 'server':
+                for serverkey, servervalue in config.items(sect):
+                    lc_serverkey = serverkey.lower()
+                    if lc_serverkey == 'port':
+                        api_port = servervalue
+                    elif lc_serverkey == 'listenaddress':
+                        api_listenaddress = servervalue
+    elif args.port is None or args.listenaddress is None:
+        sys.exit('Error: the %s configuration file could not be found.' % 
+                 args.configfile)
     if MAXTIMEDRIFTSECONDS < TIMESLOT_LENGTH:
         sys.exit('MAXTIMEDRIFTSECONDS must be bigger then TIMESLOT_LENGTH.')
+    # Override configuration with command-line arguments
+    if args.port is not None:
+        api_port = str(args.port)
+    if args.listenaddress is not None:
+        api_listenaddress = args.listenaddress
     thread_show_led = threading.Thread(target=show_led)
     thread_show_led.start()
     #WSGIRequestHandler.protocol_version = "HTTP/1.1"
-    apiapp.run(debug=False, port='18339', host='0.0.0.0')
+    apiapp.run(debug=False, port=api_port, host=api_listenaddress)
     thread_show_led.join()
 

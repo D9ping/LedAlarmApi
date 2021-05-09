@@ -1,3 +1,7 @@
 [apikeys]
 127.0.0.1: changethis!
 192.168.0.240: changethis2!
+
+[server]
+port: 18339
+listenaddress: 0.0.0.0
