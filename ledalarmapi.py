@@ -25,10 +25,11 @@ class localFlask(Flask):
 
 apiapp = localFlask(__name__)
 apikeys = { }
+# FIXME: make thread safe
 leds = { 'led0': False, 'led1': False, 'led2': False, 'led3': False,
          'led4': False, 'led5': False, 'led6': False, 'led7': False }
 TIMESLOT_LENGTH = 2
-MAXTIMEDRIFTSECONDS = 120
+MAXTIMEDRIFTSECONDS = 60
 
 @apiapp.errorhandler(404)
 def errorpage_notfound(error):
@@ -65,7 +66,7 @@ def ledon():
     """
     apikey = request.headers.get('x-apikey')
     ip = request.remote_addr
-    if not check_authentication(apikey, ip, 'ledon', True):
+    if not check_authentication(apikey, ip, 'ledon', False):
         return 'E401', 401
     if 'lednr' not in request.form:
         return 'lednr mising', 400
@@ -117,7 +118,6 @@ def statusleds():
         else:
             status_text += "false"
     status_text += "]}"
-    #response.headers['Content-Type'] = 'application/json'
     return status_text, 200, {'Content-Type': 'application/json' }
 
 @apiapp.route('/api/v1/resetleds', methods = ['POST'])
@@ -136,7 +136,6 @@ def check_authentication(apikey, ip, api_action, verbose=False):
     Check authentication hmac apikey.
     Should not be vulnerable to replay attacks.
     """
-    TIMESLOT_LENGTH = 2
     ts = time.time()
     ts_slot = ts - (ts % TIMESLOT_LENGTH)
     try:
@@ -147,14 +146,9 @@ def check_authentication(apikey, ip, api_action, verbose=False):
         apikey_last_used = apikeys[ip]['lastused']
     except:
         return False
-    islotstart = int((MAXTIMEDRIFTSECONDS / TIMESLOT_LENGTH) * -1)
-    islotend = int(MAXTIMEDRIFTSECONDS / TIMESLOT_LENGTH)
-    halfmaxtimedrifft = MAXTIMEDRIFTSECONDS / 2
-    if halfmaxtimedrifft > 0:
-        islotstart = int((halfmaxtimedrifft / TIMESLOT_LENGTH) * -1)
-        islotend = int(halfmaxtimedrifft / TIMESLOT_LENGTH)
-    print("islotstart = %d, islotend = %d" % (islotstart, islotend))
-    for i in range(islotstart, islotend, 1):
+    slotnum_start = int((MAXTIMEDRIFTSECONDS / TIMESLOT_LENGTH) * -1)
+    slotnum_end = int(MAXTIMEDRIFTSECONDS / TIMESLOT_LENGTH)
+    for i in range(slotnum_start, slotnum_end, 1):
         check_ts_slot = ts_slot - (TIMESLOT_LENGTH * i)
         if verbose:
             print("check_ts_slot = %d" % check_ts_slot)
@@ -177,6 +171,7 @@ def show_led():
     """
     Thread that updates leds.
     """
+    update_interval = 2
     while True:
         clear()
         if leds['led0']:
@@ -204,7 +199,7 @@ def show_led():
             # orange
             set_pixel(7, 255, 80, 0, 0.3)
         show()
-        time.sleep(2)
+        time.sleep(update_interval)
 
 if __name__ == '__main__':
     api_port = '18339'
