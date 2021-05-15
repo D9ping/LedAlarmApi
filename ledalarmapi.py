@@ -15,6 +15,8 @@ import hashlib
 import base64
 import hmac
 import os
+import random
+import string
 
 
 class localFlask(Flask):
@@ -30,6 +32,7 @@ leds = { 'led0': False, 'led1': False, 'led2': False, 'led3': False,
          'led4': False, 'led5': False, 'led6': False, 'led7': False }
 TIMESLOT_LENGTH = 2
 MAXTIMEDRIFTSECONDS = 60
+NONCE_LEN_SERVER = 15
 
 @apiapp.errorhandler(404)
 def errorpage_notfound(error):
@@ -53,83 +56,114 @@ def ping():
     Method to test the api. Reponsed to useragent with testpong
      if everything succeeded.
     """
-    apikey = request.headers.get('x-apikey')
+    apikey_token = request.headers.get('x-apikey')
     ip = request.remote_addr
-    if not check_authentication(apikey, ip, 'testping', True):
-        return 'E401', 401
-    return 'testpong', 200
+    msg = 'E401'
+    statuscode = 401
+    sigheaders = {}
+    if check_authentication(apikey_token, ip, 'testping', False):
+        msg = 'testpong'
+        statuscode = 200
+        sigheaders = generate_signature(apikey_token, ip, msg, statuscode)
+    return msg, statuscode, sigheaders
 
 @apiapp.route('/api/v1/ledon', methods = ['POST'])
 def ledon():
     """
     Turn a led on.
     """
-    apikey = request.headers.get('x-apikey')
+    apikey_token = request.headers.get('x-apikey')
     ip = request.remote_addr
-    if not check_authentication(apikey, ip, 'ledon', False):
+    if not check_authentication(apikey_token, ip, 'ledon', False):
         return 'E401', 401
+    statuscode = 400
     if 'lednr' not in request.form:
-        return 'lednr mising', 400
+        msg = 'lednr missing'
+        headers = generate_signature(apikey_token, ip, msg, statuscode)
+        return msg, 400, headers
     try:
         lednr = int(request.form.get('lednr', 7))
     except:
-        return 'lednr invalid', 400
+        msg = 'lednr invalid'
+        headers = generate_signature(apikey_token, ip, msg, statuscode)
+        return msg, statuscode, headers
     global leds
     leds['led'+str(lednr)] = True
-    return "ok\r\n", 200
+    statuscode = 200
+    msg = 'ok'
+    headers = generate_signature(apikey_token, ip, msg, statuscode)
+    return msg, statuscode, headers
 
 @apiapp.route('/api/v1/ledoff', methods = ['POST'])
 def ledoff():
     """
     Turn a led off.
     """
-    apikey = request.headers.get('x-apikey')
+    apikey_token = request.headers.get('x-apikey')
     ip = request.remote_addr
-    if not check_authentication(apikey, ip, 'ledoff'):
+    if not check_authentication(apikey_token, ip, 'ledoff', False):
         return 'E401', 401
+    statuscode = 400
     if 'lednr' not in request.form:
-        return 'lednr mising', 400
+        msg = 'lednr missing'
+        headers = generate_signature(apikey_token, ip, msg, statuscode)
+        return msg, 400, headers
     try:
         lednr = int(request.form.get('lednr', 7))
     except:
-        return 'lednr invalid', 400
+        msg = 'lednr invalid'
+        headers = generate_signature(apikey_token, ip, msg, statuscode)
+        return msg, statuscode, headers
     global leds
     leds['led'+str(lednr)] = False
-    return "ok\r\n", 200
+    statuscode = 200
+    msg = 'ok'
+    headers = generate_signature(apikey_token, ip, msg, statuscode)
+    return msg, statuscode, headers
 
 @apiapp.route('/api/v1/statusleds', methods = ['GET'])
 def statusleds():
     """
-    Request led status, authentication is pointless as ledon and ledoff is send in clear.
+    Request statuses of all leds. Only with successful authentication a server
+     signature is provided in the response.
     """
-    #apikey = request.headers.get('x-apikey')
-    #ip = request.remote_addr
-    #if not check_authentication(apikey, ip, 'statusleds'):
-    #    return 'E401', 401
     global leds
-    status_text = "{\"leds\":["
+    status_json = "{\"leds\":["
     firstelm = True
     for lednr in leds:
         if not firstelm:
-            status_text += ","
+            status_json += ","
         firstelm = False
         if leds[lednr]:
-            status_text += "true"
+            status_json += "true"
         else:
-            status_text += "false"
-    status_text += "]}"
-    return status_text, 200, {'Content-Type': 'application/json' }
+            status_json += "false"
+    status_json += "]}"
+    statuscode = 200
+    headers = {}
+    ip = request.remote_addr
+    apikey_token = request.headers.get('x-apikey')
+    if apikey_token is not None:
+        if check_authentication(apikey_token, ip, 'statusleds', False):
+            headers = generate_signature(apikey_token, ip, status_json, statuscode)
+    return status_json, statuscode, headers
 
 @apiapp.route('/api/v1/resetleds', methods = ['POST'])
 def resetleds():
-    apikey = request.headers.get('x-apikey')
+    """
+    Turn all leds off.
+    """
+    apikey_token = request.headers.get('x-apikey')
     ip = request.remote_addr
-    if not check_authentication(apikey, ip, 'resetleds'):
+    if not check_authentication(apikey_token, ip, 'resetleds', False):
         return 'E401', 401
     global leds
     for lednr in leds:
         leds[lednr] = False
-    return "ok\r\n", 200
+    statuscode = 200
+    msg = 'ok'
+    headers = generate_signature(apikey_token, ip, msg, statuscode)
+    return msg, statuscode, headers
 
 def check_authentication(apikey, ip, api_action, verbose=False):
     """
@@ -166,6 +200,21 @@ def check_authentication(apikey, ip, api_action, verbose=False):
                 print("Authenticed succesfull.")
             return True
     return False
+
+def generate_signature(apikey_token, ip, msg, statuscode):
+    """
+    Generate the x-signature and x-server-nonce http header to prove the response
+     message was from the server that is knowing the client apikey.
+    Must be called after check_authentication and when not false.
+    """
+    apikey = apikeys[ip]['apikey']
+    ts = time.time()
+    ts_slot = ts - (ts % TIMESLOT_LENGTH)
+    nonce_server = ''.join(random.SystemRandom().choice(string.ascii_letters + string.digits) for _ in range(NONCE_LEN_SERVER))
+    signature_data = "%s%d%s%d%s" % (apikey_token, ts_slot, msg, statuscode, nonce_server)
+    h = hmac.new(apikey.encode("utf-8"), signature_data.encode("utf-8"), hashlib.sha256)
+    signature_digest_b64 = base64.b64encode(h.digest()).decode("utf-8")
+    return {'x-server-nonce': nonce_server, 'x-signature': signature_digest_b64}
 
 def show_led():
     """
