@@ -5,7 +5,7 @@ var ledbuttons = document.querySelectorAll('.ledswitch');
 
 function setInitLedsOnStatus() {
     var xmlhttpstatus = new XMLHttpRequest();
-    xmlhttpstatus.open('GET', '/status.php', true);
+    xmlhttpstatus.open('GET', './status.php', true);
     xmlhttpstatus.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
     xmlhttpstatus.timeout = requestTimeout;
     xmlhttpstatus.onreadystatechange = function() {
@@ -48,7 +48,6 @@ function dowait() {
 
 
 setInitLedsOnStatus();
-//dowait();
 
 ledbuttons.forEach(function(button, idx) {
     button.addEventListener('click', function() {
@@ -64,9 +63,9 @@ ledbuttons.forEach(function(button, idx) {
 
         var xmlhttp = new XMLHttpRequest();
         if (ledon) {
-            xmlhttp.open('POST', '/turnoff.php', true);
+            xmlhttp.open('POST', './turnoff.php', true);
         } else {
-            xmlhttp.open('POST', '/turnon.php', true);
+            xmlhttp.open('POST', './turnon.php', true);
         }
 
         xmlhttp.onreadystatechange = function() {
