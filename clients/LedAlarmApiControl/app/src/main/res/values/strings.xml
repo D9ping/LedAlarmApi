@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">LedAlarmApiControl</string>
+    <string name="channel_name">LedAlarmApiControlChannelTest</string>
+    <string name="channel_description">LedAlarmApiControl notifications test</string>
+</resources>
