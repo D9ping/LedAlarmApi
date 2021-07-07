@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: ascii -*-
 import sys
 # pylint: disable=C0321
@@ -17,10 +17,10 @@ from configparser import ConfigParser
 if len(sys.argv) < 2:
     sys.exit('led api action argument missing.')
 api_action = str(sys.argv[1])
-if api_action != 'ledon' and api_action != 'ledoff' and api_action != 'resetleds' and api_action != 'testping':
-    sys.exit('Unknown action provided. Valid actions are: testping, resetleds, ledon and ledoff.')
+if api_action != 'ledon' and api_action != 'ledoff' and api_action != 'statusleds' and api_action != 'resetleds' and api_action != 'testping':
+    sys.exit('Unknown action provided. Valid actions are: testping, statusleds, resetleds, ledon and ledoff.')
 lednumber = None
-if api_action != 'testping' and api_action != 'resetleds':
+if api_action != 'testping' and api_action != 'statusleds' and api_action != 'resetleds':
     if len(sys.argv) < 3:
         sys.exit('lednr argument missing.')
     lednumber = str(sys.argv[2])
@@ -58,10 +58,11 @@ headers = []
 headers.append('X-Apikey: ' + apikey_token_b64)
 c.setopt(pycurl.HTTPHEADER, headers)
 c.setopt(pycurl.FOLLOWLOCATION, 0)
-c.setopt(pycurl.TIMEOUT_MS, 16000)
+c.setopt(pycurl.TIMEOUT_MS, 8000)
 c.setopt(pycurl.HEADER, 1)
-if lednumber != None:
+if api_action != "statusleds" and api_action != "testping":
     c.setopt(pycurl.POST, 1)
+if lednumber != None:
     c.setopt(pycurl.POSTFIELDS, 'lednr=' + lednumber)
 c.setopt(pycurl.WRITEDATA, buff_resp_data)
 c.perform()
@@ -112,4 +113,6 @@ if expected_signature_b64 != actual_signature_b64:
     if not validsignature:
         sys.exit("Security warning: Could not validate the signature from the server!\r\n\
  The response may be tampered and cannot be trusted or the clock is too way off.")
-print("Server signature valid.")
+if api_action == 'testping' or api_action == 'statusleds':
+    print("Server signature valid.")
+    print(resp_data)
