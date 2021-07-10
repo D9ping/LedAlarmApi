@@ -1,7 +1,8 @@
 <?php
 require_once('config.php');
 if (strtoupper($_SERVER['REQUEST_METHOD']) !== 'POST') {
-    http_response_code(400);
+    http_response_code(405);
+    header('Allow: POST');
     exit('POST method required.');
 }
 

@@ -1,11 +1,18 @@
 <?php
 require_once('config.php');
 if (strtoupper($_SERVER['REQUEST_METHOD']) !== 'GET') {
-    http_response_code(400);
+    http_response_code(405);
+    header('Allow: GET');
     exit('GET method required.');
 }
 
 $apiAction = 'statusleds';
+date_default_timezone_set("UTC");
+$timeSlot = time() - (time() % TIMESLOT_LENGTH);
+// Python string of a float adds and .0 to the number!
+$msg = $apiAction.$timeSlot.'.0';
+$apikeyDigest = base64_encode(hash_hmac(HMAC_HASH_ALGO, $msg, APISECRET, true));
+
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, 'http://'.APIHOST.':'.APIPORT.'/api/v1/'.$apiAction);
 $headers = [
