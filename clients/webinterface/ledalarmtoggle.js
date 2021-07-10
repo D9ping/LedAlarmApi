@@ -14,13 +14,14 @@ function setInitLedsOnStatus() {
             for (var i = 0; i < status.leds.length; ++i) {
                 ledbuttons.forEach(function(btn, idx) {
                     if (btn.getAttribute('data-lednr') == i) {
+                        let imgSwitch = document.getElementById('imgSwitchL' + i);
                         if (status.leds[i]) {
-                            btn.setAttribute('data-ledon', '1');
-                            btn.src = 'switch_on.png';
-                            document.getElementById('pageBody').style.backgroundColor = '#fff';
+                            btn.setAttribute('aria-checked', 'true');
+                            imgSwitch.setAttribute('src', './switch_on.png');
+                            document.body.className = 'light';
                         } else {
-                            btn.setAttribute('data-ledon', '0');
-                            btn.src = 'switch_off.png';
+                            btn.setAttribute('aria-checked', 'false');
+                            imgSwitch.setAttribute('src', './switch_off.png');
                         }
 
                         return;
@@ -55,9 +56,10 @@ ledbuttons.forEach(function(button, idx) {
             return;
         }
 
-        button.src = 'switch_undefined.png';
+        let imgSwitch = document.getElementById('imgSwitchL' + idx);
+        imgSwitch.setAttribute('src', './switch_undefined.png');
         let ledon = false;
-        if (button.getAttribute('data-ledon') === '1') {
+        if (button.getAttribute('aria-checked') === 'true') {
             ledon = true;
         }
 
@@ -72,22 +74,22 @@ ledbuttons.forEach(function(button, idx) {
             if (xmlhttp.readyState == 4) {
                 if (xmlhttp.status != 200) {
                     if (ledon) {
-                        button.src = 'switch_on.png';
+                        imgSwitch.setAttribute('src', './switch_on.png');
                     } else {
-                        button.src = 'switch_off.png';
+                        imgSwitch.setAttribute('src', './switch_off.png');
                     }
 
                     return;
                 }
 
                 if (ledon) {
-                    button.setAttribute('data-ledon', '0');
-                    button.src = 'switch_off.png';
-                    document.getElementById('pageBody').style.backgroundColor = '#000';
+                    button.setAttribute('aria-checked', 'false');
+                    imgSwitch.setAttribute('src', './switch_off.png');
+                    document.body.className = '';
                 } else {
-                    button.setAttribute('data-ledon', '1');
-                    button.src = 'switch_on.png';
-                    document.getElementById('pageBody').style.backgroundColor = '#fff'
+                    button.setAttribute('aria-checked', 'true');
+                    imgSwitch.setAttribute('src', './switch_on.png');
+                    document.body.className = 'light';
                 }
 
                 dowait();
@@ -97,6 +99,5 @@ ledbuttons.forEach(function(button, idx) {
         xmlhttp.timeout = requestTimeout;
         xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         xmlhttp.send('l='+button.getAttribute('data-lednr'));
-        document.getElementById('pageBody').style.backgroundColor = '#999';
     });
 });

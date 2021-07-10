@@ -1,30 +1,50 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <title>Led Alarm Api webinterface</title>
-    <link rel="stylesheet" type="text/css" href="./ledalarmapiwebinterface_default.css" />
+    <link rel="stylesheet" type="text/css" href="./ledalarmapiwebinterface_default.css?rev=2" />
 </head>
 <body id="pageBody">
-<noscript><center class="errormsg">Javascript required for toggling led switches.</center><br /></noscript>
-<center>
-<span>red</span><img width="25%" id="btnSwitchL0" class="ledswitch" src="./switch_undefined.png" alt="Switch 0" data-lednr="0" data-ledon="undefined"> &nbsp;
-<span>blue</span><img width="25%" id="btnSwitchL1" class="ledswitch" src="./switch_undefined.png" alt="Switch 1" data-lednr="1" data-ledon="undefined">
-</center><br />
-<center>
-<span>white</span><img width="25%" id="btnSwitchL2" class="ledswitch" src="./switch_undefined.png" alt="Switch 2" data-lednr="2" data-ledon="undefined"> &nbsp;
-<span>green</span><img width="25%" id="btnSwitchL3" class="ledswitch" src="./switch_undefined.png" alt="Switch 3" data-lednr="3" data-ledon="undefined">
-</center><br />
-<center>
-<span>purple</span><img width="25%" id="btnSwitchL4" class="ledswitch" src="./switch_undefined.png" alt="Switch 4" data-lednr="4" data-ledon="undefined"> &nbsp;
-<span>yellow</span><img width="25%" id="btnSwitchL5" class="ledswitch" src="./switch_undefined.png" alt="Switch 5" data-lednr="5" data-ledon="undefined">
-</center><br />
-<center>
-<span>cyan</span><img width="25%" id="btnSwitchL6" class="ledswitch" src="./switch_undefined.png" alt="Switch 6" data-lednr="6" data-ledon="undefined"> &nbsp;
-<span>orange</span><img width="25%" id="btnSwitchL7" class="ledswitch" src="./switch_undefined.png" alt="Switch 7" data-lednr="7" data-ledon="undefined">
-</center><br />
-<br />
-</div>
-<script type="application/javascript" src="./ledalarmtoggle.js"></script>
+    <div class="pageMain" role="main">
+        <h1 class="pageTitle">Led alarm api webinterface</h1>
+        <noscript><center class="errormsg">Javascript required for toggling led switches.</center><br /></noscript>
+        <label for="btnSwitchL0">red</label>
+        <button id="btnSwitchL0" width="25%" class="ledswitch" data-lednr="0" role="switch" aria-checked="false">
+            <img id="imgSwitchL0" src="./switch_undefined.png" alt="switch">
+        </button>&nbsp;
+        <label for="btnSwitchL1">blue</label>
+        <button id="btnSwitchL1" width="25%" class="ledswitch" data-lednr="1" role="switch" aria-checked="false">
+            <img id="imgSwitchL1" src="./switch_undefined.png" alt="switch">
+        </button>
+        <br />
+        <label for="btnSwitchL2">white</label>
+        <button id="btnSwitchL2" width="25%" class="ledswitch" data-lednr="2" role="switch" aria-checked="false">
+            <img id="imgSwitchL2" src="./switch_undefined.png" alt="switch">
+        </button>&nbsp;
+        <label for="btnSwitchL3">green</label>
+        <button id="btnSwitchL3" width="25%" class="ledswitch" data-lednr="3" role="switch" aria-checked="false">
+            <img id="imgSwitchL3" src="./switch_undefined.png" alt="switch">
+        </button>
+        <br />
+        <label for="btnSwitchL4">purple</label>
+        <button id="btnSwitchL4" width="25%" class="ledswitch" data-lednr="4" role="switch" aria-checked="false">
+            <img id="imgSwitchL4" src="./switch_undefined.png" alt="switch">
+        </button>&nbsp;
+        <label for="btnSwitchL5">yellow</label>
+        <button id="btnSwitchL5" width="25%" class="ledswitch" data-lednr="5" role="switch" aria-checked="false">
+            <img id="imgSwitchL5" src="./switch_undefined.png" alt="switch">
+        </button>
+        <br />
+        <label for="btnSwitchL6">cyan</label>
+        <button id="btnSwitchL6" width="25%" class="ledswitch" data-lednr="6" role="switch" aria-checked="false">
+            <img id="imgSwitchL6" src="./switch_undefined.png" alt="switch">
+        </button>&nbsp;
+        <label for="btnSwitchL7">orange</label>
+        <button id="btnSwitchL7" width="25%" class="ledswitch" data-lednr="7" role="switch" aria-checked="false">
+            <img id="imgSwitchL7" src="./switch_undefined.png" alt="switch">
+        </button>
+    </div>
+    <script type="application/javascript" src="./ledalarmtoggle.js"></script>
 </body>
 </html>

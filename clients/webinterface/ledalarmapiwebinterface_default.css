@@ -1,19 +1,42 @@
 body {
-    background-color: #000;
+    background-color: #000000;
     -webkit-transition: 0.75s all ease-in-out;
     -moz-transition: 0.75s all ease-in-out;
     -o-transition: 0.75s all ease-in-out;
     transition: 0.75s all ease-in-out;
-    color: #888888;
+    color: #cccccc;
 }
-center span {
+body.light {
+    background-color: #ffffff;
+    color: #333333;
+}
+h1.pageTitle {
+    font-size: 24pt
+}
+div.pageMain {
+    text-align: center;
+}
+div.pageMain > label {
     position: relative;
-    bottom: 16px;
-    margin-right: 1em;
+    bottom: 2em;
+    font-size: 14pt;
+    display: inline-block;
+    min-width: 100px;
 }
-.ledswitch:hover {
+button.ledswitch {
+    background-color: transparent;
+    border: 0px;
+    color: #ffffff;
+}
+button.ledswitch > img {
+    max-width: 240px;
+}
+button.ledswitch:hover {
     transition: 0.5s all ease;
     cursor:pointer;
+}
+body.light button.ledswitch {
+    color: #000000;
 }
 .errormsg {
     color: red;
@@ -65,4 +88,12 @@ center span {
 }
 #btnSwitchL7:hover {
     filter: hue-rotate(50deg) brightness(120%) !important;
+}
+
+@media (max-width: 740px) {
+    div.pageMain > label {
+        min-width: 100% !important;
+        bottom: 0 !important;
+    }
+
 }
