@@ -39,7 +39,7 @@ for sect in config.sections():
             api_host = value
         elif key == 'port':
             api_port = value
-SCRIPT_USERAGENT = 'TriggerLedAlarm/1.1'
+SCRIPT_USERAGENT = 'LedAlarmApiClient/1.2'
 TIMESLOT_LENGTH = 2
 MAXTIMEDRIFFT = 16
 ts = time.time()
@@ -49,7 +49,6 @@ h = hmac.new(api_key.encode("utf-8"), msg.encode("utf-8"), hashlib.sha256)
 apikey_digest = h.digest()
 apikey_token_b64 = base64.b64encode(apikey_digest).decode("utf-8")
 url = 'http://' + api_host + ':' + api_port + '/api/v1/' + api_action
-#url = 'http://127.0.0.1:18339/api/v1/ledon'
 buff_resp_data = BytesIO()
 c = pycurl.Curl()
 c.setopt(c.URL, url)
