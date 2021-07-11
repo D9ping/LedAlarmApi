@@ -19,10 +19,14 @@ if ($lednr < 0 || $lednr > 7) {
 
 $apiAction = 'ledoff';
 date_default_timezone_set("UTC");
-$timeSlot = time() - (time() % TIMESLOT_LENGTH);
-// Python string of a float adds and .0 to the number!
-$msg = $apiAction.$timeSlot.'.0';
-$apikeyDigest = base64_encode(hash_hmac('sha256', $msg, APISECRET, true));
+$ts = time();
+if (TIMESLOT_LENGTH < 1) {
+    $ts = microtime(true);
+}
+
+$timeSlot = $ts - ($ts % TIMESLOT_LENGTH);
+$msg = $apiAction.$timeSlot;
+$apikeyDigest = base64_encode(hash_hmac(HMAC_HASH_ALGO, $msg, APISECRET, true));
 
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, 'http://'.APIHOST.':'.APIPORT.'/api/v1/'.$apiAction);

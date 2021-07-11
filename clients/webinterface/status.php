@@ -8,9 +8,13 @@ if (strtoupper($_SERVER['REQUEST_METHOD']) !== 'GET') {
 
 $apiAction = 'statusleds';
 date_default_timezone_set("UTC");
-$timeSlot = time() - (time() % TIMESLOT_LENGTH);
-// Python string of a float adds and .0 to the number!
-$msg = $apiAction.$timeSlot.'.0';
+$ts = time();
+if (TIMESLOT_LENGTH < 1) {
+    $ts = microtime(true);
+}
+
+$timeSlot = $ts - ($ts % TIMESLOT_LENGTH);
+$msg = $apiAction.$timeSlot;
 $apikeyDigest = base64_encode(hash_hmac(HMAC_HASH_ALGO, $msg, APISECRET, true));
 
 $ch = curl_init();

@@ -171,6 +171,8 @@ def check_authentication(apikey, ip, api_action, verbose=False):
     Should not be vulnerable to replay attacks.
     """
     ts = time.time()
+    if TIMESLOT_LENGTH >= 1:
+        ts = int(ts)
     ts_slot = ts - (ts % TIMESLOT_LENGTH)
     try:
         expected_apikey = apikeys[ip]['apikey']
@@ -209,6 +211,8 @@ def generate_signature(apikey_token, ip, msg, statuscode):
     """
     apikey = apikeys[ip]['apikey']
     ts = time.time()
+    if TIMESLOT_LENGTH >= 1:
+        ts = int(ts)
     ts_slot = ts - (ts % TIMESLOT_LENGTH)
     nonce_server = ''.join(random.SystemRandom().choice(string.ascii_letters + string.digits) for _ in range(NONCE_LEN_SERVER))
     signature_data = "%s%d%s%d%s" % (apikey_token, ts_slot, msg, statuscode, nonce_server)

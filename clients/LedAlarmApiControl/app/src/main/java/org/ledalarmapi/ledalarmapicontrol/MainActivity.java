@@ -181,7 +181,7 @@ public class MainActivity extends AppCompatActivity {
         Instant instantTimeStamp = Instant.now();
         long ts = instantTimeStamp.getEpochSecond();
         long ts_slot = ts - (ts % TIMESLOT_LENGTH);
-        String msg = action + ts_slot + ".0";
+        String msg = action + ts_slot;
         EditText etApiKey = (EditText) findViewById(R.id.editTextApikey);
         byte[] hmacSha256 = HMAC.hmac256(etApiKey.getText().toString(), msg);
         String apiToken = Base64.getEncoder().encodeToString(hmacSha256);
