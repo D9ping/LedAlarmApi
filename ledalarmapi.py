@@ -1,41 +1,41 @@
 #!/usr/bin/env python3
 # -*- coding: ascii -*-
 import sys
-
 # pylint: disable=C0321
 if sys.version_info.major < 3: sys.exit('Python version 2(or lower) is not supported.')
-from flask import Flask
-from flask import request
-from blinkt import set_pixel, set_brightness, show, clear
-from configparser import ConfigParser
 import argparse
-import time
-import threading
-import hashlib
 import base64
+import hashlib
 import hmac
 import os
 import random
 import string
+import threading
+import time
+from configparser import ConfigParser
+from blinkt import set_pixel, show, clear
+from flask import Flask
+from flask import request
 
 
-class localFlask(Flask):
+class LocalFlask(Flask):
     def process_response(self, response):
-       response.headers['Server'] = 'LedAlarmApi/1.0'
-       response.headers['Content-Type'] = 'text/plain'
-       return(response)
+        response.headers['Server'] = 'LedAlarmApi/1.0'
+        response.headers['Content-Type'] = 'text/plain'
+        return response
 
-apiapp = localFlask(__name__)
-apikeys = { }
-# FIXME: make thread safe
-leds = { 'led0': False, 'led1': False, 'led2': False, 'led3': False,
-         'led4': False, 'led5': False, 'led6': False, 'led7': False }
+apiapp = LocalFlask(__name__)
+apikeys = {}
+lock_leds = threading.Lock()
+leds = {'led0': False, 'led1': False, 'led2': False, 'led3': False,
+        'led4': False, 'led5': False, 'led6': False, 'led7': False}
 TIMESLOT_LENGTH = 2
 MAXTIMEDRIFTSECONDS = 60
 NONCE_LEN_SERVER = 15
 
 @apiapp.errorhandler(404)
 def errorpage_notfound(error):
+    # pylint: disable=W0613
     """
     A non existing page is requested.
     Return E404 as error message.
@@ -44,13 +44,14 @@ def errorpage_notfound(error):
 
 @apiapp.errorhandler(405)
 def errorpage_wrongmethod(error):
+    # pylint: disable=W0613
     """
     A api endpoint with the wrong HTTP method is request.
     Return E405 as error message.
     """
     return 'E405', 405
 
-@apiapp.route('/api/v1/testping', methods = ['GET'])
+@apiapp.route('/api/v1/testping', methods=['GET'])
 def ping():
     """
     Method to test the api. Reponsed to useragent with testpong
@@ -67,7 +68,7 @@ def ping():
         sigheaders = generate_signature(apikey_token, ip, msg, statuscode)
     return msg, statuscode, sigheaders
 
-@apiapp.route('/api/v1/ledon', methods = ['POST'])
+@apiapp.route('/api/v1/ledon', methods=['POST'])
 def ledon():
     """
     Turn a led on.
@@ -87,14 +88,16 @@ def ledon():
         msg = 'lednr invalid'
         headers = generate_signature(apikey_token, ip, msg, statuscode)
         return msg, statuscode, headers
-    global leds
+    global leds, lock_leds
+    lock_leds.acquire()
     leds['led'+str(lednr)] = True
+    lock_leds.release()
     statuscode = 200
     msg = 'ok'
     headers = generate_signature(apikey_token, ip, msg, statuscode)
     return msg, statuscode, headers
 
-@apiapp.route('/api/v1/ledoff', methods = ['POST'])
+@apiapp.route('/api/v1/ledoff', methods=['POST'])
 def ledoff():
     """
     Turn a led off.
@@ -114,14 +117,16 @@ def ledoff():
         msg = 'lednr invalid'
         headers = generate_signature(apikey_token, ip, msg, statuscode)
         return msg, statuscode, headers
-    global leds
+    global leds, lock_leds
+    lock_leds.acquire()
     leds['led'+str(lednr)] = False
+    lock_leds.release()
     statuscode = 200
     msg = 'ok'
     headers = generate_signature(apikey_token, ip, msg, statuscode)
     return msg, statuscode, headers
 
-@apiapp.route('/api/v1/statusleds', methods = ['GET'])
+@apiapp.route('/api/v1/statusleds', methods=['GET'])
 def statusleds():
     """
     Request statuses of all leds. Only with successful authentication a server
@@ -148,7 +153,7 @@ def statusleds():
             headers = generate_signature(apikey_token, ip, status_json, statuscode)
     return status_json, statuscode, headers
 
-@apiapp.route('/api/v1/resetleds', methods = ['POST'])
+@apiapp.route('/api/v1/resetleds', methods=['POST'])
 def resetleds():
     """
     Turn all leds off.
@@ -157,9 +162,11 @@ def resetleds():
     ip = request.remote_addr
     if not check_authentication(apikey_token, ip, 'resetleds', False):
         return 'E401', 401
-    global leds
+    global leds, lock_leds
+    lock_leds.acquire()
     for lednr in leds:
         leds[lednr] = False
+    lock_leds.release()
     statuscode = 200
     msg = 'ok'
     headers = generate_signature(apikey_token, ip, msg, statuscode)
@@ -214,19 +221,22 @@ def generate_signature(apikey_token, ip, msg, statuscode):
     if TIMESLOT_LENGTH >= 1:
         ts = int(ts)
     ts_slot = ts - (ts % TIMESLOT_LENGTH)
-    nonce_server = ''.join(random.SystemRandom().choice(string.ascii_letters + string.digits) for _ in range(NONCE_LEN_SERVER))
+    nonce_server = ''
+    for _ in range(NONCE_LEN_SERVER):
+        nonce_server += random.SystemRandom().choice(string.ascii_letters + string.digits)
     signature_data = "%s%d%s%d%s" % (apikey_token, ts_slot, msg, statuscode, nonce_server)
     h = hmac.new(apikey.encode("utf-8"), signature_data.encode("utf-8"), hashlib.sha256)
     signature_digest_b64 = base64.b64encode(h.digest()).decode("utf-8")
     return {'x-server-nonce': nonce_server, 'x-signature': signature_digest_b64}
 
-def show_led():
+def show_led(lock_leds):
     """
     Thread that updates leds.
     """
     update_interval = 2
     while True:
         clear()
+        lock_leds.acquire()
         if leds['led0']:
             # red
             set_pixel(0, 255, 0, 0, 0.3)
@@ -251,6 +261,7 @@ def show_led():
         if leds['led7']:
             # orange
             set_pixel(7, 255, 80, 0, 0.3)
+        lock_leds.release()
         show()
         time.sleep(update_interval)
 
@@ -258,15 +269,15 @@ if __name__ == '__main__':
     api_port = '18339'
     api_listenaddress = '0.0.0.0'
     parser = argparse.ArgumentParser(description='Leds REST api for the Blinkt hat.')
-    parser.add_argument('configfile', nargs='?', type=str, 
+    parser.add_argument('configfile', nargs='?', type=str,
                         default='/etc/ledalarmapi.conf',
-                        help="""Path to the ledalarmapi configuration file. If 
+                        help="""Path to the ledalarmapi configuration file. If
  not provided /etc/ledalarmapi.conf is used.""")
     parser.add_argument('-P', '--port', metavar=api_port, type=int, default=None,
                         help="""The port number to use.""")
     parser.add_argument('-L', '--listenaddress', metavar=api_listenaddress,
                         type=str, default=None,
-                        help="""Address to listen the HTTP REST server on. 
+                        help="""Address to listen the HTTP REST server on.
  By default uses 0.0.0.0 for all IPv4 network interfaces.""")
     args = parser.parse_args()
     if os.path.exists(args.configfile):
@@ -286,7 +297,7 @@ if __name__ == '__main__':
                     elif lc_serverkey == 'listenaddress':
                         api_listenaddress = servervalue
     elif args.port is None or args.listenaddress is None:
-        sys.exit('Error: the %s configuration file could not be found.' % 
+        sys.exit('Error: the %s configuration file could not be found.' %
                  args.configfile)
     if MAXTIMEDRIFTSECONDS < TIMESLOT_LENGTH:
         sys.exit('MAXTIMEDRIFTSECONDS must be bigger then TIMESLOT_LENGTH.')
@@ -295,9 +306,8 @@ if __name__ == '__main__':
         api_port = str(args.port)
     if args.listenaddress is not None:
         api_listenaddress = args.listenaddress
-    thread_show_led = threading.Thread(target=show_led)
+    thread_show_led = threading.Thread(target=show_led, args=(lock_leds,))
     thread_show_led.start()
     #WSGIRequestHandler.protocol_version = "HTTP/1.1"
     apiapp.run(debug=False, port=api_port, host=api_listenaddress)
     thread_show_led.join()
-
